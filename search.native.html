@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="zh-cn">
+  <head>
+    <title>Search|Google and Bing</title>
+    <meta name="description" content="Search|Google and Bing">
+
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="谢先斌">
+    <meta name="publisher" content="me@xiexianbin.cn">
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/search.css" rel="stylesheet" />
+    <script src="js/theme.native.js" type="text/javascript" charset="utf-8"></script>
+  </head>
+
+  <body data-spy="scroll" style="position: relative">
+    <div class="container">
+      <div class="row">
+        <section class="col-sm-12 col-md-12 col-xl-12">
+          <div class="form-group">
+            <div class="input-group col-xs-12 pt-4 pb-2">
+              <form class="form-inline search w-100" name="search-from" action="javascript:doSearch();">
+                <div class="col-md-6 offset-md-3 col-sm-12 input-group mx-auto pb-2">
+                  <input class="form-control" type="text" id="search" name="search" placeholder="请输入感兴趣的关键字" aria-label="Search">
+                  <input type="hidden" id="from" value="hugo-bootstrap-x" />
+                  <div class="input-group-append">
+                    <span class="input-group-text">
+                      <svg class="octicon octicon-search" viewBox="0 0 16 16" version="1.1" width="20" aria-hidden="true"
+                        onclick="javascript:doSearch();">
+                        <path fill-rule="evenodd" d="M15.7 13.3l-3.81-3.83A5.93 5.93 0 0 0 13 6c0-3.31-2.69-6-6-6S1 2.69 1 6s2.69 6 6 6c1.3 0 2.48-.41 3.47-1.11l3.83 3.81c.19.2.45.3.7.3.25 0 .52-.09.7-.3a.996.996 0 0 0 0-1.41v.01zM7 10.7c-2.59 0-4.7-2.11-4.7-4.7 0-2.59 2.11-4.7 4.7-4.7 2.59 0 4.7 2.11 4.7 4.7 0 2.59-2.11 4.7-4.7 4.7z"></path>
+                      </svg>
+                    </span>
+                    <select id="searchengine" name="searchengine" class="input-group-text" onchange="changeSearchEngine()">
+                      <option value="bing">Bing</option>
+                      <option value="google">Google</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-12">
+                  <blockquote class="d-none" id="search-result">
+                    <div>
+                      <b class="d-none" id="search-result-true">
+                        找到 <code id="search-terms"></code> 约 <code id="total-results"></code> 条结果<span id="search-time"></span>
+                      </b>
+                      <b class="d-none" id="search-result-notfound">
+                        No matching pages found.
+                      </b>
+                    </div>
+                  </blockquote>
+                  <div>
+                    <ul class="pl-0 col-md-9 col-sm-12" id="search-result-items" style="min-height: 360px;"></ul>
+                  </div>
+                  <div class="search-result-page" id="search-result-page">
+                    <ul class="pagination mb-0">
+                      <li class="page-item pr-2">
+                        <a onclick="prevPage()" href="#" id="page-prev" class="d-none">上一页</a>
+                      </li>
+                      <li class="page-item">
+                        <a onclick="nextPage()" href="#" id="page-next" class="d-none">下一页</a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <script type="text/javascript">
+      var _startIndex = 1;
+      var _countPerPage = 10;
+      var _pageIndex = 1;
+      var _totalResults = 0;
+
+      function showResult(id) {
+        document.querySelector('#search-result').className = "d-block";
+        document.querySelector('#search-result-true').className = "d-none";
+        document.querySelector('#search-result-notfound').className = "d-none";
+        document.querySelector('#search-result-items').className = "pl-0 col-md-9";
+        document.querySelector('#search-result-page').className = "d-block";
+
+        document.querySelector('#' + id).className = "d-block";
+      }
+
+      function hideResult(id) {
+        document.querySelector('#search-result').className = "d-none";
+        document.querySelector('#search-result-items').innerHTML = "";
+        document.querySelector('#search-result-true').className = "d-none";
+        document.querySelector('#search-result-notfound').className = "d-none";
+        document.querySelector('#search-result-page').className = "d-none";
+      }
+    </script>
+
+    <script type="text/javascript">
+      var gcx = "007480820547784409176:acha4wg42mx";
+      var gkey = "AIzaSyDt6jqGK_DHQZq7mAWU7l0FC6rkbi750J8";
+
+      function doGoogleSearch() {
+        var q = document.querySelector('#search').value;
+        if (q != "" && (typeof q != "undefined")) {
+          googleSearch(q, 0);
+        }
+      }
+
+      function googleSearch(q, direction) {
+        if (direction === -1) {
+          _startIndex = _startIndex - _countPerPage;
+          _pageIndex--;
+        }
+        if (direction === 1) {
+          _startIndex = _startIndex + _countPerPage;
+          _pageIndex++;
+        }
+        console.log("begin search, q: %s, _startIndex: %d, _countPerPage: %d, _pageIndex: %d", q, _startIndex,
+          _countPerPage, _pageIndex)
+        $x.getAjax(
+          "https://www.googleapis.com/customsearch/v1?cx=" + gcx + "&key=" + gkey + "&q=" + q + "&start=" +
+          _startIndex + "&num=" + _countPerPage, {},
+          googleSearchResult);
+      }
+
+      function googleSearchResult(data) {
+        var response = JSON.parse(data);
+        console.log("google search response: %s", response)
+        var html = "";
+
+        if (response.searchInformation.totalResults == 0) {
+          showResult("search-result-notfound");
+          return;
+        } else {
+          document.querySelector('#search-terms').innerHTML = response.queries.request[0].searchTerms;
+          document.querySelector('#total-results').innerHTML = response.searchInformation.totalResults;
+          document.querySelector('#search-time').innerHTML = '（用时<code>' + response.searchInformation.searchTime +
+            '</code>秒）';
+          showResult("search-result-true");
+        }
+
+        if (response.queries.request[0].startIndex > 1) {
+          document.querySelector('#page-prev').className = 'd-block';
+        } else {
+          document.querySelector('#page-prev').className = 'd-none';
+        }
+
+        if (response.queries.nextPage != null && response.queries.nextPage[0] != null && response.queries.nextPage[0].startIndex >
+          0) {
+          document.querySelector('#page-next').className = 'd-block';
+        } else {
+          document.querySelector('#page-next').className = 'd-none';
+        }
+
+        for (var i = 0; i < response.items.length; i++) {
+          var item = response.items[i];
+          html += "<li class='modal-open pt-2 pb-1 mb-1 border-bottom'>";
+          html += "<h5 class='mb-1'>"
+          html += "<a href='" + item.link + "' target='_blank'> " + item.htmlTitle + "</a>";
+          html += "</h5>"
+          html += "<div class='mb-1'>"
+          html += "<a href='" + item.link + "' target='_blank'> " + item.link + "</a>";
+          html += " - <a href='http://www.google.com/search?q=cache:" + item.cacheId + ":" + item.displayLink +
+            "' target='_blank'>Snapshoot</a>";
+          html += "</div>"
+          html += "<div class='mb-2'>"
+          html += item.htmlSnippet;
+          html += "</div>"
+          html += "</li>"
+        }
+        document.querySelector('#search-result-items').innerHTML = html;
+      }
+    </script>
+    <script type="text/javascript">
+      var bCustomConfigurationID = "de0ad813-490c-4823-a02e-8a2aadcac3b9";
+      var bSubscriptionKey = "b003145681b044768e5fabc29baac24d";
+
+      function doBingSearch() {
+        var q = document.querySelector('#search').value;
+        if (q != "" && (typeof q != "undefined")) {
+          bingSearch(q, 0);
+        }
+      }
+
+      function bingSearch(q, direction) {
+        if (direction === -1) {
+          _startIndex = _startIndex - _countPerPage;
+          _pageIndex--;
+        }
+        if (direction === 1) {
+          _startIndex = _startIndex + _countPerPage;
+          _pageIndex++;
+        }
+        console.log("begin search, q: %s, _startIndex: %d, _countPerPage: %d, _pageIndex: %d", q, _startIndex,
+          _countPerPage, _pageIndex)
+        $x.getAjax(
+          "https://api.cognitive.microsoft.com/bingcustomsearch/v7.0/search?q=" + q + "&customconfig=" +
+          bCustomConfigurationID + "&count=" + _countPerPage + "&offset=" + _startIndex, {
+            'Ocp-Apim-Subscription-Key': bSubscriptionKey
+          },
+          bingSearchResult);
+      }
+
+      function bingSearchResult(data) {
+        var response = JSON.parse(data);
+        console.log("bing search response: %s", response);
+        var html = "";
+
+        if (JSON.stringify(response.rankingResponse) == JSON.stringify({})) {
+          showResult("search-result-notfound");
+          return;
+        } else {
+          document.querySelector('#search-terms').innerHTML = response.queryContext.originalQuery;
+          document.querySelector('#total-results').innerHTML = response.webPages.totalEstimatedMatches;
+          document.querySelector('#search-time').innerHTML = "";
+          showResult("search-result-true");
+        }
+
+        if (_startIndex > 1) {
+          document.querySelector('#page-prev').className = 'd-block';
+        } else {
+          document.querySelector('#page-prev').className = 'd-none';
+        }
+
+        if (response.webPages.totalEstimatedMatches - _countPerPage > _startIndex) {
+          document.querySelector('#page-next').className = 'd-block';
+        } else {
+          document.querySelector('#page-next').className = 'd-none';
+        }
+
+        for (var i = 0; i < response.webPages.value.length; i++) {
+          var item = response.webPages.value[i];
+          html += "<li class='modal-open pt-2 pb-1 mb-1 border-bottom'>";
+          html += "<h5 class='mb-1'>"
+          html += "<a href='" + item.url + "' target='_blank'> " + item.name + "</a>";
+          html += "</h5>"
+          html += "<div class='mb-1'>"
+          html += "<a href='" + item.url + "' target='_blank'> " + item.url + "</a>";
+
+          html += "</div>"
+          html += "<div class='mb-2'>"
+          html += item.snippet;
+          html += "</div>"
+          html += "</li>"
+        }
+        document.querySelector('#search-result-items').innerHTML = html;
+      }
+    </script>
+
+
+    <script type="text/javascript">
+      var searchengine = "bing";
+
+      function initSearchEngine() {
+        if (typeof(Storage) !== "undefined") {
+          searchengine = localStorage.getItem("searchengine");
+          document.getElementById("searchengine").value = searchengine;
+          console.log("searchengine is: %s", searchengine);
+        } else {
+          console.log("抱歉！您的浏览器不支持 Web Storage ...");
+        }
+      }
+      initSearchEngine();
+
+      function changeSearchEngine() {
+        var selectNodesObj = document.getElementById('searchengine');
+        var searchengine = selectNodesObj.options[selectNodesObj.selectedIndex].value;
+        localStorage.setItem("searchengine", searchengine);
+        console.log("changeSearchEngine is: %s", searchengine);
+      }
+
+      function doSearch() {
+        _startIndex = 1;
+        _pageIndex = 1;
+        _totalResults = 0;
+
+        document.querySelector('#search-result-items').className = "pl-0 col-md-9 col-sm-12";
+        hideResult();
+
+        if (typeof(Storage) !== "undefined" && searchengine == "google") {
+          doGoogleSearch();
+        } else {
+          doBingSearch();
+        }
+      }
+
+      function prevPage() {
+        hideResult();
+        var q = document.querySelector('#search').value;
+        if (q != "" && q != "undefined") {
+          if (typeof(Storage) !== "undefined" && searchengine == "google") {
+            googleSearch(q, -1);
+          } else {
+            bingSearch(q, -1);
+          }
+        }
+      }
+
+      function nextPage() {
+        hideResult();
+        var q = document.querySelector('#search').value;
+        if (q != "" && q != "undefined") {
+          if (typeof(Storage) !== "undefined" && searchengine == "google") {
+            googleSearch(q, 1);
+          } else {
+            bingSearch(q, 1);
+          }
+        }
+      }
+
+      function init() {
+        var search = $x.getQueryString(window.location.href)["q"];
+        if (search != "" && (typeof search != "undefined")) {
+          document.querySelector('#search').value = search;
+          doSearch();
+        }
+        document.querySelector('#search-result').className = "d-none";
+
+        document.querySelector('#search').focus();
+      }
+      init();
+    </script>
+    </div>
+  </body>
+</html>
