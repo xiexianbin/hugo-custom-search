@@ -1,4 +1,6 @@
-# google-custom-search
+# hugo-custom-search
+
+html base search demo, support google and bing, use by hugo theme
 
 ## config
 
